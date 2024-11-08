@@ -1,50 +1,44 @@
 import pdfplumber
-import re
-import argparse
+import sys
 
 def pdf_to_markdown(pdf_path, output_path):
     try:
-        # 打开PDF文件
+        print(f'开始处理PDF文件: {pdf_path}')
         with pdfplumber.open(pdf_path) as pdf:
             markdown_content = []
             
-            # 遍历每一页
-            for page in pdf.pages:
-                # 提取文本
+            print(f'PDF总页数: {len(pdf.pages)}')
+            for i, page in enumerate(pdf.pages, 1):
+                print(f'正在处理第 {i} 页...')
                 text = page.extract_text()
                 
-                # 打印每页的内容以进行调试
-                print(f"Page {page.page_number} content:\n{text}\n")
-                
-                # 基本的文本清理
                 if text:
+                    # 基础清理
                     text = text.strip()
-                    # 将连续的换行符替换为单个换行符
-                    text = re.sub(r'\n\s*\n', '\n\n', text)
-                    # 添加到markdown内容中
+                    
+                    # 只保留基本的换行，不做复杂处理
+                    lines = text.splitlines()
+                    cleaned_lines = [line.strip() for line in lines if line.strip()]
+                    text = '\n\n'.join(cleaned_lines)
+                    
                     markdown_content.append(text)
             
-            # 将所有内容组合成一个字符串
+            # 简单合并所有页面内容
             final_content = '\n\n'.join(markdown_content)
             
-            # 写入markdown文件
+            print(f'写入文件: {output_path}')
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(final_content)
             print(f'转换成功！Markdown文件已保存到: {output_path}')
     except Exception as e:
         print(f'转换过程中发生错误: {str(e)}')
 
-def main():
-    # 创建命令行参数解析器
-    parser = argparse.ArgumentParser(description='将PDF转换为Markdown格式')
-    parser.add_argument('input_pdf', help='输入PDF文件的路径')
-    parser.add_argument('output_md', help='输出Markdown文件的路径')
-    
-    # 解析命令行参数
-    args = parser.parse_args()
-    
-    # 执行转换
-    pdf_to_markdown(args.input_pdf, args.output_md)
-
 if __name__ == '__main__':
-    main() 
+    if len(sys.argv) != 3:
+        print('使用方法: python pdf_to_markdown.py <输入PDF文件> <输出MD文件>')
+        sys.exit(1)
+    
+    pdf_path = sys.argv[1]
+    output_path = sys.argv[2]
+    
+    pdf_to_markdown(pdf_path, output_path) 
